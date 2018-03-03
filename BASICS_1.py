@@ -430,3 +430,61 @@ map(lambda x: x * x, [1, 2, 3, 4, 5, 6, 7, 8, 9])
 
 
 # 装饰器
+# Python的 decorator 本质上就是一个高阶函数，它接收一个函数作为参数，然后，返回一个新函数。
+# 使用Python提供的 @ 语法，这样可以避免手动编写 f = decorate(f) 这样的代码
+# @log
+# @performance
+# @transaction
+# @post('/register')
+def log(f):
+    def fn(*args, **kw):
+        print("call {name}()...".format(name=f.__name__))
+        return f(*args, **kw)
+    return fn
+
+
+@log
+def factorial(n):
+    return reduce(lambda x, y: x * y, range(1, n + 1))
+
+
+print(factorial(10))
+
+# 要让 @log 自适应任何参数定义的函数，可以利用Python的 *args 和 **kw，保证任意个数的参数总是能正常调用：
+# *args表示任何多个无名参数，它是一个tuple；**kwargs表示关键字参数，它是一个dict。并且同时使用*args和**kwargs时，
+# 必须*args参数列要在**kwargs前
+
+
+# 把上面的定义翻译成高阶函数的调用，就是：
+# my_func = log('DEBUG')(my_func)
+
+
+def log2(prefix):
+    def log_decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kw):
+            print("[{prefix}]Calling {method_name}()...".format(
+                prefix=prefix, method_name=f.__name__))
+            return f(*args, **kw)
+        return wrapper
+    return log_decorator
+
+
+@log2("DEBUG")
+def hello_log2():
+    print("hello log2...")
+
+
+hello_log2()
+print(hello_log2.__name__)      # output: 'wrapper', which is not expected!!!
+
+# int()函数还提供额外的base参数，默认值为10
+print(int('12345', base=8))
+
+# functools.partial就是帮助我们创建一个偏函数的
+int2 = functools.partial(int, base=2)
+print(int2('1000000'))
+
+
+sorted_ignore_cases = functools.partial(sorted, key=str.lower)
+print(sorted_ignore_cases(['bob', 'about', 'Zoo', 'Credit']))
